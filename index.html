@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulateur Énergétique Avancé</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* bg-slate-50 */
+        }
+        /* Style pour la transition fluide de la sidebar */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        /* Style pour le défilement fluide */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <div class="flex">
+        <!-- Sidebar (Menu Latéral) -->
+        <aside id="sidebar" class="bg-white w-64 min-h-screen flex-col fixed inset-y-0 left-0 shadow-xl transform -translate-x-full md:translate-x-0 z-50">
+            <!-- Logo/Titre -->
+            <div class="p-5 border-b flex items-center space-x-3">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800">Simulateur</h1>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="index.html" class="flex items-center px-4 py-2.5 text-purple-700 bg-purple-50 rounded-lg font-semibold">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                    <span class="mx-4">Accueil</span>
+                </a>
+                <a href="solaire.html" class="flex items-center px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-purple-700 rounded-lg transition-colors duration-200">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-12.66l-.707.707M4.04 19.96l-.707.707M21 12h-1M4 12H3m16.96-7.96l-.707-.707M4.04 4.04l-.707-.707" /></svg>
+                    <span class="mx-4">Rentabilité Solaire</span>
+                </a>
+                <a href="calculateur_stockage.html" class="flex items-center px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-purple-700 rounded-lg transition-colors duration-200">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <span class="mx-4">Coût du Stockage</span>
+                </a>
+                <a href="ktot.html" class="flex items-center px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-purple-700 rounded-lg transition-colors duration-200">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    <span class="mx-4">Analyse Complète</span>
+                </a>
+                <a href="parametre.html" class="flex items-center px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-purple-700 rounded-lg transition-colors duration-200">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m12 4a2 2 0 100-4m0 4a2 2 0 110-4m-6 4v-2m0 2a2 2 0 100-4m0 4a2 2 0 110-4" /></svg>
+                    <span class="mx-4">Paramètres Batterie</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Contenu Principal -->
+        <div class="flex-1 md:ml-64">
+            <!-- Header du contenu principal (avec bouton hamburger pour mobile) -->
+            <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="py-4 flex items-center">
+                        <button id="hamburger-button" class="text-slate-500 hover:text-purple-600 focus:outline-none md:hidden">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        </button>
+                        <h1 class="text-xl font-semibold text-slate-800 ml-4 md:ml-0">Tableau de Bord</h1>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenu de la page -->
+            <main class="p-4 sm:p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto">
+                    <div class="text-center mb-12">
+                        <h1 class="text-4xl font-bold text-slate-900 mb-3">Simulateur Énergétique Avancé</h1>
+                        <p class="text-slate-600 text-lg max-w-3xl mx-auto">Prenez des décisions éclairées pour vos projets solaires et de stockage d'énergie grâce à nos outils d'analyse transparents et détaillés.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Carte : Rentabilité Solaire -->
+                        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                            <div class="mb-4 text-yellow-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-12.66l-.707.707M4.04 19.96l-.707.707M21 12h-1M4 12H3m16.96-7.96l-.707-.707M4.04 4.04l-.707-.707" /></svg></div>
+                            <h2 class="text-xl font-semibold text-slate-800 mb-2">Rentabilité Solaire</h2>
+                            <p class="text-slate-600 mb-4 flex-grow">Estimez le temps de retour, le profit et la viabilité de votre installation photovoltaïque.</p>
+                            <a href="solaire.html" class="mt-auto bg-purple-600 text-white text-center px-5 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors">Lancer le calcul</a>
+                        </div>
+                        <!-- Carte : Coût du Stockage -->
+                        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                             <div class="mb-4 text-green-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                            <h2 class="text-xl font-semibold text-slate-800 mb-2">Coût du Stockage</h2>
+                            <p class="text-gray-600 mb-4 flex-grow">Analysez le coût actualisé du stockage (LCOS) pour différentes technologies de batteries.</p>
+                            <a href="calculateur_stockage.html" class="mt-auto bg-purple-600 text-white text-center px-5 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors">Lancer le calcul</a>
+                        </div>
+                        <!-- Carte : Analyse Complète -->
+                        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                            <div class="mb-4 text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg></div>
+                            <h2 class="text-xl font-semibold text-slate-800 mb-2">Analyse Complète</h2>
+                            <p class="text-gray-600 mb-4 flex-grow">Optimisez les coûts et revenus pour un système combiné Solaire + Batterie.</p>
+                            <a href="ktot.html" class="mt-auto bg-purple-600 text-white text-center px-5 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors">Lancer l'analyse</a>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Overlay pour l'arrière-plan quand le menu mobile est ouvert -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        hamburgerButton.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+    </script>
+
+</body>
+</html>

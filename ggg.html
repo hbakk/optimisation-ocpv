@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse de Rentabilité Complète : Solaire + Batterie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+        }
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        .input-group label {
+            display: block;
+            color: #4b5563;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .input-group .input-wrapper {
+            display: flex;
+            align-items: center;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            text-align: right;
+            font-size: 0.875rem;
+            background-color: #fff;
+        }
+         .input-group select {
+            text-align: left;
+         }
+        .input-group .unit {
+            margin-left: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+            min-width: 80px;
+            text-align: left;
+        }
+        .result-box {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+        }
+        .result-box .label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        .result-box .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .lcoe-box {
+             background-color: #e0f2fe; /* light-blue-100 */
+             border: 1px solid #bae6fd; /* light-blue-200 */
+        }
+        .lcoe-box .value {
+            color: #0c4a6e; /* light-blue-800 */
+        }
+        .van-box {
+            background-color: #f0fdf4; /* green-50 */
+            border: 1px solid #dcfce7; /* green-100 */
+        }
+        .van-box .value.positive {
+            color: #16a34a; /* green-600 */
+        }
+        .van-box .value.negative {
+            color: #dc2626; /* red-600 */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="w-full bg-white shadow-md">
+        <div class="container mx-auto px-4 py-5">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 text-center">Analyse de Rentabilité Complète</h1>
+            <p class="text-center text-gray-600 mt-1">Optimisation des coûts et des revenus pour un système Solaire + Batterie.</p>
+        </div>
+    </div>
+
+    <main class="container mx-auto p-4 md:p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Inputs -->
+            <div class="lg:col-span-1">
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4 border-b pb-3">Paramètres du Projet</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-semibold text-indigo-700 mb-2">Installation Solaire</h3>
+                            <div class="input-group">
+                                <label for="pv_power">Puissance Crête PV</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="pv_power" value="5">
+                                    <span class="unit">kWp</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="solar_irradiance">Irradiation Solaire</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="solar_irradiance" value="1500">
+                                    <span class="unit">kWh/kWp/an</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-indigo-700 mb-2">Système de Batterie</h3>
+                             <div class="input-group">
+                                <label for="technology_selector">Technologie</label>
+                                <div class="input-wrapper">
+                                    <select id="technology_selector" class="w-full">
+                                        <option value="lithium_ion">Batterie Lithium-ion</option>
+                                        <option value="vanadium_flow">Batterie à flux Vanadium</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-group"><label for="battery_power">Puissance Batterie</label><div class="input-wrapper"><input type="number" id="battery_power"><span class="unit">kW</span></div></div>
+                            <div class="input-group"><label for="battery_capacity">Capacité Batterie</label><div class="input-wrapper"><input type="number" id="battery_capacity"><span class="unit">kWh</span></div></div>
+                            <div class="input-group"><label for="battery_efficiency">Rendement A/R</label><div class="input-wrapper"><input type="number" id="battery_efficiency"><span class="unit">%</span></div></div>
+                            <div class="input-group"><label for="battery_cost_power">Coût Inv. Puissance</label><div class="input-wrapper"><input type="number" id="battery_cost_power"><span class="unit">€/kW</span></div></div>
+                            <div class="input-group"><label for="battery_cost_energy">Coût Inv. Énergie</label><div class="input-wrapper"><input type="number" id="battery_cost_energy"><span class="unit">€/kWh</span></div></div>
+                            <div class="input-group"><label for="battery_lifetime_cycles">Durée de vie (cycles)</label><div class="input-wrapper"><input type="number" id="battery_lifetime_cycles"><span class="unit">cycles</span></div></div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-indigo-700 mb-2">Consommation & Tarifs</h3>
+                            <div class="input-group"><label for="daily_consumption">Conso. Journalière</label><div class="input-wrapper"><input type="number" id="daily_consumption" value="15"><span class="unit">kWh</span></div></div>
+                            <div class="input-group"><label for="grid_price">Prix Achat Réseau</label><div class="input-wrapper"><input type="number" id="grid_price" value="0.25" step="0.01"><span class="unit">€/kWh</span></div></div>
+                            <div class="input-group"><label for="feed_in_tariff">Tarif Rachat Surplus</label><div class="input-wrapper"><input type="number" id="feed_in_tariff" value="0.10" step="0.01"><span class="unit">€/kWh</span></div></div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-indigo-700 mb-2">Financier</h3>
+                            <div class="input-group"><label for="discount_rate">Taux d'actualisation</label><div class="input-wrapper"><input type="number" id="discount_rate" value="5"><span class="unit">%</span></div></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8">
+                        <button id="calculate_button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-300">
+                            Lancer l'Analyse de Rentabilité
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="lg:col-span-2 space-y-8" id="results-column">
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Résultats de l'Analyse</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="result-box">
+                            <div class="label">Coût Investissement Batterie</div>
+                            <div class="value" id="res_battery_capex">...</div>
+                        </div>
+                        <div class="result-box">
+                            <div class="label">Économies Annuelles (An 1)</div>
+                            <div class="value" id="res_annual_savings">...</div>
+                        </div>
+                        <div class="result-box">
+                            <div class="label">Retour sur Investissement</div>
+                            <div class="value" id="res_payback">...</div>
+                        </div>
+                        <div class="result-box">
+                            <div class="label">Durée de vie du projet</div>
+                            <div class="value" id="res_project_lifetime">...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Analyse Financière sur la Durée de Vie</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="result-box van-box">
+                            <div class="label">Valeur Actuelle Nette (VAN)</div>
+                            <div class="value" id="res_npv">...</div>
+                        </div>
+                        <div class="result-box lcoe-box">
+                            <div class="label">LCOE du Système</div>
+                            <div class="value" id="res_lcoe">...</div>
+                        </div>
+                    </div>
+                    <div>
+                        <canvas id="energyFlowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Default Data for Battery Technologies ---
+        const techData = {
+            'lithium_ion': { battery_power: 3, battery_capacity: 10, battery_efficiency: 90, battery_cost_power: 250, battery_cost_energy: 525, battery_lifetime_cycles: 6000 },
+            'vanadium_flow': { battery_power: 3, battery_capacity: 10, battery_efficiency: 75, battery_cost_power: 700, battery_cost_energy: 450, battery_lifetime_cycles: 15000 },
+        };
+
+        // --- Mock Data & Profiles ---
+        // Normalized hourly consumption profile (sums to 1)
+        const consumptionProfile = [0.03, 0.02, 0.02, 0.02, 0.03, 0.04, 0.06, 0.07, 0.06, 0.05, 0.04, 0.04, 0.04, 0.04, 0.04, 0.05, 0.06, 0.07, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03];
+        // Normalized hourly solar production profile (sums to 1)
+        const solarProfile = [0, 0, 0, 0, 0, 0, 0.01, 0.05, 0.09, 0.12, 0.14, 0.16, 0.15, 0.12, 0.09, 0.05, 0.01, 0, 0, 0, 0, 0, 0, 0];
+
+        let myChart;
+        
+        // --- Helper Functions ---
+        function formatNumber(value, decimals = 2) {
+            if (isNaN(value) || !isFinite(value)) return 'N/A';
+            return value.toLocaleString('fr-FR', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        function formatCurrency(value, unit = ' €') {
+            if (isNaN(value) || !isFinite(value)) return `N/A`;
+            const sign = value < 0 ? '−' : ''; // Use minus sign instead of hyphen
+            return `${sign}${formatNumber(Math.abs(value), 2)}${unit}`;
+        }
+        
+        // --- DOM Elements ---
+        const techSelector = document.getElementById('technology_selector');
+        const calculateButton = document.getElementById('calculate_button');
+        const resultsContainer = document.getElementById('results-column');
+
+        // --- Event Listeners ---
+        techSelector.addEventListener('change', updateTechnologyForm);
+        calculateButton.addEventListener('click', () => {
+            resultsContainer.style.opacity = '1';
+            calculateAndShowResults();
+        });
+
+
+        function updateTechnologyForm() {
+            const selectedTech = techSelector.value;
+            const data = techData[selectedTech];
+            for (const key in data) {
+                const element = document.getElementById(key);
+                if (element) element.value = data[key];
+            }
+        }
+
+        function calculateAndShowResults() {
+            // --- 1. Get Inputs ---
+            const pvPower = parseFloat(document.getElementById('pv_power').value); // kWp
+            const irradiance = parseFloat(document.getElementById('solar_irradiance').value); // kWh/kWp/an
+            const batteryPower = parseFloat(document.getElementById('battery_power').value); // kW
+            const batteryCapacity = parseFloat(document.getElementById('battery_capacity').value); // kWh
+            const batteryEfficiency = parseFloat(document.getElementById('battery_efficiency').value) / 100;
+            const batteryCostPower = parseFloat(document.getElementById('battery_cost_power').value); // €/kW
+            const batteryCostEnergy = parseFloat(document.getElementById('battery_cost_energy').value); // €/kWh
+            const batteryLifetimeCycles = parseFloat(document.getElementById('battery_lifetime_cycles').value);
+            const dailyConsumption = parseFloat(document.getElementById('daily_consumption').value); // kWh
+            const gridPrice = parseFloat(document.getElementById('grid_price').value); // €/kWh
+            const feedInTariff = parseFloat(document.getElementById('feed_in_tariff').value); // €/kWh
+            const discountRate = parseFloat(document.getElementById('discount_rate').value) / 100;
+
+            // --- 2. Core Calculations ---
+            
+            // CAPEX
+            const batteryCapex = (batteryPower * batteryCostPower) + (batteryCapacity * batteryCostEnergy);
+            
+            // Project Lifetime
+            const dailyCycles = 1; // Assume one full cycle per day for simplicity
+            const projectLifetimeYears = Math.min(25, batteryLifetimeCycles / (dailyCycles * 365));
+
+            // Energy Flow Simulation (for one representative day)
+            const annualConsumption = dailyConsumption * 365;
+            const annualSolarProduction = pvPower * irradiance;
+            
+            let hourlyConsumption = consumptionProfile.map(p => p * dailyConsumption);
+            let hourlySolar = solarProfile.map(p => p * (annualSolarProduction / 365));
+
+            let batterySOC = batteryCapacity / 2; // Start at 50%
+            let hourlyData = {
+                consumption: [],
+                directSolar: [],
+                fromBattery: [],
+                fromGrid: [],
+                chargeFlow: []
+            };
+
+            for (let h = 0; h < 24; h++) {
+                let solar = hourlySolar[h];
+                let consumption = hourlyConsumption[h];
+                let fromGrid = 0;
+                let fromBattery = 0;
+                let toBattery = 0;
+                let toGrid = 0;
+
+                // 1. Direct self-consumption
+                let directUse = Math.min(solar, consumption);
+                let excessSolar = solar - directUse;
+                let remainingConsumption = consumption - directUse;
+
+                // 2. Charge battery with excess solar
+                if (excessSolar > 0) {
+                    let chargePower = Math.min(excessSolar, batteryPower, batteryCapacity - batterySOC);
+                    toBattery = chargePower;
+                    batterySOC += chargePower; 
+                }
+                
+                // 3. Discharge battery to meet remaining consumption
+                if (remainingConsumption > 0) {
+                    let dischargePower = Math.min(remainingConsumption, batteryPower, batterySOC);
+                    fromBattery = dischargePower;
+                    batterySOC -= dischargePower / batteryEfficiency; // discharging losses
+                }
+
+                // 4. Final grid interaction
+                remainingConsumption -= fromBattery;
+                if (remainingConsumption > 0) {
+                    fromGrid = remainingConsumption;
+                }
+                
+                excessSolar -= toBattery;
+                if(excessSolar > 0) {
+                    toGrid = excessSolar;
+                }
+
+                hourlyData.consumption.push(consumption);
+                hourlyData.directSolar.push(directUse);
+                hourlyData.fromBattery.push(fromBattery);
+                hourlyData.fromGrid.push(fromGrid);
+                hourlyData.chargeFlow.push(toBattery - fromBattery);
+            }
+            
+            // Financials (Annualized)
+            const dailySavings = (hourlyData.directSolar.reduce((a, b) => a + b, 0) + hourlyData.fromBattery.reduce((a, b) => a + b, 0)) * gridPrice;
+            const dailyRevenue = (hourlySolar.reduce((a, b) => a + b, 0) - hourlyData.directSolar.reduce((a, b) => a + b, 0) - hourlyData.chargeFlow.filter(v => v>0).reduce((a, b) => a + b, 0)) * feedInTariff;
+            const dailyGridCost = hourlyData.fromGrid.reduce((a, b) => a + b, 0) * gridPrice;
+
+            const annualNetValue = (dailySavings + dailyRevenue - dailyGridCost) * 365;
+
+            // Simple Payback
+            const simplePayback = annualNetValue > 0 ? batteryCapex / annualNetValue : -1;
+
+            // NPV Calculation
+            let npv = -batteryCapex;
+            for (let y = 1; y <= projectLifetimeYears; y++) {
+                npv += annualNetValue / Math.pow(1 + discountRate, y);
+            }
+
+            // LCOE (simplified for the whole system)
+            const totalEnergyConsumedFromSystem = hourlyData.directSolar.reduce((a,b)=>a+b,0) + hourlyData.fromBattery.reduce((a,b)=>a+b,0);
+            const lcoe = totalEnergyConsumedFromSystem > 0 ? batteryCapex / (totalEnergyConsumedFromSystem * 365 * projectLifetimeYears) : Infinity;
+
+            // --- 3. Update UI ---
+            document.getElementById('res_battery_capex').textContent = formatCurrency(batteryCapex, ' €');
+            document.getElementById('res_annual_savings').textContent = formatCurrency(annualNetValue, ' €');
+            document.getElementById('res_payback').textContent = simplePayback > 0 && simplePayback < 50 ? `${formatNumber(simplePayback, 1)} ans` : "N/A";
+            document.getElementById('res_project_lifetime').textContent = `${formatNumber(projectLifetimeYears, 1)} ans`;
+            
+            const npvEl = document.getElementById('res_npv');
+            npvEl.textContent = formatCurrency(npv, ' €');
+            npvEl.className = `value ${npv >= 0 ? 'positive' : 'negative'}`;
+
+            document.getElementById('res_lcoe').textContent = `${formatNumber(lcoe, 3)} €/kWh`;
+
+
+            // --- 4. Update Chart ---
+            const ctx = document.getElementById('energyFlowChart').getContext('2d');
+            if (myChart) {
+                myChart.destroy();
+            }
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`),
+                    datasets: [
+                        {
+                            label: 'Consommation Totale',
+                            data: hourlyData.consumption,
+                            type: 'line',
+                            borderColor: '#1f2937',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            yAxisID: 'y',
+                            tension: 0.3,
+                        },
+                        {
+                            label: 'Solaire Direct',
+                            data: hourlyData.directSolar,
+                            backgroundColor: '#facc15', // yellow-400
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Depuis Batterie',
+                            data: hourlyData.fromBattery,
+                            backgroundColor: '#34d399', // emerald-400
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Depuis Réseau',
+                            data: hourlyData.fromGrid,
+                            backgroundColor: '#fb923c', // orange-400
+                            yAxisID: 'y',
+                        },
+                         {
+                            label: 'Flux de Charge Batterie (kW)',
+                            data: hourlyData.chargeFlow,
+                            type: 'line',
+                            borderColor: '#60a5fa', // blue-400
+                            borderDash: [5, 5],
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            yAxisID: 'y1',
+                            tension: 0.3,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Puissance (kW)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Flux Batterie (kW)'
+                            },
+                             grid: {
+                                drawOnChartArea: false, // only want the grid lines for one axis to show up
+                            },
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                }
+            });
+        }
+
+        // Initial setup on page load
+        window.onload = () => {
+             resultsContainer.style.opacity = '0.5';
+             updateTechnologyForm(); // Set initial form values based on default technology
+             
+             // Add event listeners to all inputs to re-calculate on change
+             const inputs = document.querySelectorAll('input, select');
+             inputs.forEach(input => input.addEventListener('change', () => {
+                 // No automatic calculation on change, user must press the button
+             }));
+        };
+
+    </script>
+</body>
+</html>
