@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur de Stockage d'Énergie avec Simulation et Optimisation</title>
+    <title>Calculateur de Stockage d'Énergie Avancé</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,7 +28,6 @@
         .file-input-label { display: block; padding: 0.75rem 1rem; border: 2px dashed #D1D5DB; border-radius: 0.5rem; text-align: center; cursor: pointer; background-color: #F9FAFB; color: #4B5563; transition: background-color 0.2s, border-color 0.2s; }
         .file-input-label:hover { background-color: #F3F4F6; border-color: #9CA3AF; }
         #profile_uploader { display: none; }
-        /* Tab styling */
         .tab-button { padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; font-size: 0.875rem; }
         .tab-button.active { border-color: #4F46E5; color: #4F46E5; font-weight: 600; }
         .tab-content { display: none; }
@@ -34,26 +36,25 @@
 </head>
 
 <body class="bg-gray-50 text-gray-800">
-
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Calculateur de Stockage d'Énergie avec Simulation et Optimisation</h1>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Calculateur de Stockage d'Énergie</h1>
+            <p class="text-md text-gray-600 mt-2">Simulation Annuelle, Analyse Financière et Optimisation</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Colonne 1: Entrées -->
             <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg">
                 <h2 class="text-2xl font-bold mb-6 border-b pb-4">Paramètres</h2>
-                
                 <details class="mb-4" open>
                     <summary class="text-lg font-semibold">Simulation & Technologie</summary>
                     <div class="mt-4 pl-4 border-l-2 border-gray-200">
                         <div class="mb-6">
                             <h3 class="text-md font-semibold mb-3">Profil de Simulation (CSV)</h3>
-                            <label for="profile_uploader" class="file-input-label"><span>Choisir un profil CSV</span></label>
+                            <label for="profile_uploader" class="file-input-label"><span>Choisir un profil CSV (8760h)</span></label>
                             <input type="file" id="profile_uploader" accept=".csv">
                             <p id="file-name" class="text-sm mt-2"></p>
-                            <p class="text-xs text-gray-500 mt-1">Le CSV doit contenir les colonnes : `production_wh_per_kwp`, `consumption_wh`.</p>
+                            <p class="text-xs text-gray-500 mt-1">Colonnes requises : `production_wh_per_kwp`, `consumption_wh`.</p>
                         </div>
                         <div class="mb-6">
                             <h3 class="text-md font-semibold mb-3">Installation PV</h3>
@@ -69,7 +70,6 @@
                         </div>
                     </div>
                 </details>
-
                 <details class="mb-4">
                     <summary class="text-lg font-semibold">Paramètres de la Batterie</summary>
                     <div class="mt-4 pl-4 border-l-2 border-gray-200">
@@ -84,18 +84,16 @@
                         <div class="input-group"><label for="eol_threshold">Seuil fin de vie (SOH)</label><div class="input-container"><input type="number" id="eol_threshold"><span class="unit">%</span></div></div>
                     </div>
                 </details>
-
                 <details class="mb-4">
                     <summary class="text-lg font-semibold">Scénario Économique</summary>
                     <div class="mt-4 pl-4 border-l-2 border-gray-200">
-                        <div class="input-group"><label for="charging_cost">Prix Achat Électricité</label><div class="input-container"><input type="number" id="charging_cost" value="0.20"><span class="unit">$/kWh</span></div></div>
-                        <div class="input-group"><label for="selling_price">Prix Vente Surplus</label><div class="input-container"><input type="number" id="selling_price" value="0.10"><span class="unit">$/kWh</span></div></div>
+                        <div class="input-group"><label for="charging_cost">Prix Achat Électricité</label><div class="input-container"><input type="number" id="charging_cost" value="0.20" step="0.01"><span class="unit">$/kWh</span></div></div>
+                        <div class="input-group"><label for="selling_price">Prix Vente Surplus</label><div class="input-container"><input type="number" id="selling_price" value="0.10" step="0.01"><span class="unit">$/kWh</span></div></div>
                         <div class="input-group"><label for="om_power">O&M - Puissance</label><div class="input-container"><input type="number" id="om_power"><span class="unit">$/kW-an</span></div></div>
                         <div class="input-group"><label for="eol_cost_energy">Coût fin de vie (valeur)</label><div class="input-container"><input type="number" id="eol_cost_energy"><span class="unit">$/kWh</span></div></div>
                         <div class="input-group"><label for="discount_rate">Taux d'actualisation</label><div class="input-container"><input type="number" id="discount_rate" value="5"><span class="unit">%</span></div></div>
                     </div>
                 </details>
-
                 <div class="mt-8">
                     <button id="calculate_button" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-300">
                         Lancer la Simulation
@@ -106,9 +104,9 @@
             <!-- Colonne 2 & 3: Résultats -->
             <div id="results_columns" class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg hidden">
                 <div class="border-b border-gray-200">
-                    <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                    <nav class="-mb-px flex space-x-4 flex-wrap" aria-label="Tabs">
                         <button class="tab-button active" data-tab="summary_tab">Bilan & Coûts</button>
-                        <button class="tab-button" data-tab="profile_tab">Profil Journalier</button>
+                        <button class="tab-button" data-tab="profile_tab">Profils Détaillés</button>
                         <button class="tab-button" data-tab="flow_tab">Flux Énergétiques</button>
                         <button class="tab-button" data-tab="details_tab">Détails Calculs</button>
                         <button class="tab-button" data-tab="optim_tab">Optimisation</button>
@@ -120,23 +118,15 @@
                 </div>
 
                 <div id="profile_tab" class="tab-content mt-6">
-                    <h3 class="text-xl font-semibold mb-4">Profil sur 24h (premier jour)</h3>
-                    <canvas id="prod_cons_chart"></canvas>
-                    <canvas id="soc_chart" class="mt-8"></canvas>
-                    <!-- NEW CHARTS ADDED HERE -->
-                    <h3 class="text-xl font-semibold mb-4 mt-8">Flux de Puissance de la Batterie sur 24h</h3>
-                    <canvas id="battery_power_chart" class="mt-4"></canvas>
-                    <h3 class="text-xl font-semibold mb-4 mt-8">Interaction avec le Réseau sur 24h</h3>
-                    <canvas id="grid_interaction_chart" class="mt-4"></canvas>
-                    <h3 class="text-xl font-semibold mb-4 mt-8">Coût Net / Économie Horaire sur 24h</h3>
-                    <canvas id="hourly_net_cost_chart" class="mt-4"></canvas>
-                    <!-- END NEW CHARTS -->
-
-                    <div id="daily_profile_analysis" class="mt-10 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Analyse du Profil Journalier</h3>
-                        <p class="text-sm text-gray-700" id="analysis_text">
-                            L'analyse du profil journalier sera affichée ici après la simulation.
-                        </p>
+                    <div class="mt-8 pt-6 border-t">
+                         <h3 class="text-xl font-semibold mb-4">Aperçu Hebdomadaire Détaillé</h3>
+                         <div class="flex items-center space-x-4 mb-6 bg-gray-100 p-3 rounded-md">
+                            <label for="week_selector" class="font-semibold text-sm">Choisir une semaine :</label>
+                            <input type="week" id="week_selector" class="border-gray-300 rounded-md shadow-sm text-sm">
+                         </div>
+                         <div style="height: 450px;">
+                            <canvas id="weekly_overview_chart"></canvas>
+                         </div>
                     </div>
                 </div>
 
@@ -148,35 +138,31 @@
                 <div id="details_tab" class="tab-content mt-6">
                     <h3 class="text-xl font-semibold mb-4">Détails des Calculs</h3>
                     <div id="calculation_details"></div>
-                    
-                    <!-- Section Analyse Comparative -->
                     <div class="mt-8 pt-6 border-t">
                         <h3 class="text-xl font-semibold mb-4">Analyse Comparative des Technologies</h3>
-                        <p class="text-sm text-gray-600 mb-4">Comparez le LCOS et le retour sur investissement pour les différentes technologies de stockage en utilisant les paramètres de simulation et économiques actuels (sauf ceux spécifiques à la technologie).</p>
-                        <button id="compare_button" class="w-full mb-4 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors duration-300">
-                            Lancer la Comparaison
-                        </button>
+                        <p class="text-sm text-gray-600 mb-4">Comparez le LCOS et le retour sur investissement pour différentes technologies.</p>
+                        <button id="compare_button" class="w-full mb-4 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700">Lancer la Comparaison</button>
                         <div id="comparative_results_container" class="hidden">
-                               <canvas id="comparative_chart"></canvas>
+                            <canvas id="comparative_chart"></canvas>
                         </div>
                     </div>
                 </div>
                 
                 <div id="optim_tab" class="tab-content mt-6">
-                       <div id="optimization_section">
-                            <h3 class="text-xl font-semibold mb-4">Optimisation de la Taille de la Batterie</h3>
-                            <div class="input-group"><label for="optim_min_cap">Capacité Min (kWh)</label><input type="number" id="optim_min_cap" value="2"></div>
-                            <div class="input-group"><label for="optim_max_cap">Capacité Max (kWh)</label><input type="number" id="optim_max_cap" value="20"></div>
-                            <div class="input-group"><label for="optim_step">Pas (kWh)</label><input type="number" id="optim_step" value="1"></div>
-                            <button id="optimize_button" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Lancer l'Optimisation</button>
-                            <div id="optimization_results_container" class="mt-4">
-                                 <canvas id="optimization_chart"></canvas>
-                                 <p id="optimization_summary" class="text-center font-semibold mt-2"></p>
-                            </div>
-                       </div>
+                    <div id="optimization_section">
+                        <h3 class="text-xl font-semibold mb-4">Optimisation de la Taille de la Batterie</h3>
+                        <div class="input-group"><label for="optim_min_cap">Capacité Énerg. Min</label><div class="input-container"><input type="number" id="optim_min_cap" value="2"><span class="unit">kWh</span></div></div>
+                        <div class="input-group"><label for="optim_max_cap">Capacité Énerg. Max</label><div class="input-container"><input type="number" id="optim_max_cap" value="20"><span class="unit">kWh</span></div></div>
+                        <div class="input-group"><label for="optim_step">Pas</label><div class="input-container"><input type="number" id="optim_step" value="1"><span class="unit">kWh</span></div></div>
+                        <button id="optimize_button" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Lancer l'Optimisation</button>
+                        <div id="optimization_results_container" class="mt-4 hidden">
+                             <canvas id="optimization_chart"></canvas>
+                             <p id="optimization_summary" class="text-center font-semibold mt-2"></p>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="download_container" class="mt-8">
+                <div id="download_container" class="mt-8 hidden">
                     <button id="download_button" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700">
                         Télécharger le Rapport (Excel)
                     </button>
@@ -188,53 +174,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // --- DATA & CONFIG ---
-            // Updated techData based on Table 3.2 (pages 83-84) of the provided document
-            const techData = {
-                'lithium_ion': { 
-                    name: "Lithium Ion", 
-                    investment_power: 250, // USD/kW
-                    investment_energy: 300, // USD/kWh
-                    om_power: 5, // USD/kW-year
-                    eol_cost_energy: 0, // USD/kWh (no specific value, assuming 0 for lithium-ion based on Table 3.2)
-                    round_trip_efficiency: 86, // %
-                    depth_of_discharge: 80, // %
-                    cycle_lifetime: 3500, // cycles
-                    temporal_degradation: 1, // %/year
-                    eol_threshold: 80, // % (SOH)
-                    om_energy: 0.4, // USD/MWh_el (Table 3.2)
-                    self_discharge: 1 // %cap/day (Table 3.2)
-                },
-                'vanadium_flow': { 
-                    name: "Vanadium Flow", 
-                    investment_power: 700, // USD/kW
-                    investment_energy: 450, // USD/kWh
-                    om_power: 10, // USD/kW-year
-                    eol_cost_energy: -100, // USD/kWh (Table 3.2)
-                    round_trip_efficiency: 68, // % (Table 3.2)
-                    depth_of_discharge: 100, // %
-                    cycle_lifetime: 20000, // cycles
-                    temporal_degradation: 0.1, // %/year (Table 3.2)
-                    eol_threshold: 80, // % (assuming 80% as a common threshold if not explicitly stated, or 95% from Table 5.2)
-                    om_energy: 2, // USD/MWh_el (Table 3.2)
-                    self_discharge: 0 // %cap/day (Table 3.2)
-                },
-                'pumped_hydro': { 
-                    name: "Pompage-turbinage", 
-                    investment_power: 1100, // USD/kW
-                    investment_energy: 50, // USD/kWh
-                    om_power: 20, // USD/kW-year
-                    eol_cost_energy: 0, // USD/kWh (Table 3.2)
-                    round_trip_efficiency: 80, // %
-                    depth_of_discharge: 100, // %
-                    cycle_lifetime: 30000, // cycles
-                    temporal_degradation: 0, // %/year
-                    eol_threshold: 95, // % (Table 5.2 for PHES, though not explicitly in Table 3.2 for PHES)
-                    om_energy: 0.4, // USD/MWh_el (Table 3.2)
-                    self_discharge: 0 // %cap/day (Table 3.2)
-                }
-            };
+            const techData = { 'lithium_ion': { name: "Lithium Ion", investment_power: 250, investment_energy: 300, om_power: 5, eol_cost_energy: 0, round_trip_efficiency: 86, depth_of_discharge: 80, cycle_lifetime: 3500, temporal_degradation: 1, eol_threshold: 80, om_energy: 0.4, self_discharge: 1 }, 'vanadium_flow': { name: "Vanadium Flow", investment_power: 700, investment_energy: 450, om_power: 10, eol_cost_energy: -100, round_trip_efficiency: 68, depth_of_discharge: 100, cycle_lifetime: 20000, temporal_degradation: 0.1, eol_threshold: 80, om_energy: 2, self_discharge: 0 }, 'pumped_hydro': { name: "Pompage-turbinage", investment_power: 1100, investment_energy: 50, om_power: 20, eol_cost_energy: 0, round_trip_efficiency: 80, depth_of_discharge: 100, cycle_lifetime: 30000, temporal_degradation: 0, eol_threshold: 95, om_energy: 0.4, self_discharge: 0 } };
             let profileData = [];
-            let lastResults = {};
+            let lastResults = null;
             let charts = {};
 
             // --- DOM ELEMENTS ---
@@ -245,81 +187,68 @@
             const fileNameDisplay = document.getElementById('file-name');
             const optimizeButton = document.getElementById('optimize_button');
             const compareButton = document.getElementById('compare_button');
-            const analysisTextElement = document.getElementById('analysis_text');
-            
+            const weekSelector = document.getElementById('week_selector');
+
             // --- UTILITY FUNCTIONS ---
-            function formatNumber(value, decimals = 2) {
-                if (isNaN(value) || !isFinite(value)) return "N/A";
-                return value.toLocaleString('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+            const formatNumber = (value, decimals = 2) => (isNaN(value) || !isFinite(value)) ? "N/A" : value.toLocaleString('fr-FR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+            const formatCurrency = (value, unit = '$') => (isNaN(value) || !isFinite(value)) ? `N/A ${unit.trim()}` : `${value < 0 ? '-' : ''}${unit.trim()}${formatNumber(Math.abs(value))}`;
+            
+            function showModal(message) {
+                const existingModal = document.getElementById('custom-modal');
+                if (existingModal) existingModal.remove();
+                const messageBox = document.createElement('div');
+                messageBox.id = 'custom-modal';
+                messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
+                messageBox.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm"><p class="text-lg font-semibold mb-4">${message}</p><button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">OK</button></div>`;
+                messageBox.querySelector('button').onclick = () => messageBox.remove();
+                document.body.appendChild(messageBox);
             }
 
-            function formatCurrency(value, unit = '$') {
-                if (isNaN(value) || !isFinite(value)) return `N/A ${unit.trim()}`;
-                const sign = value < 0 ? '-' : '';
-                return `${sign}${formatNumber(Math.abs(value))}${unit.startsWith(' ') ? '' : ' '}${unit.trim()}`;
-            }
-            
             // --- DATA HANDLING & PARSING ---
             function getInputs() {
                 const inputs = {};
-                document.querySelectorAll('input, select').forEach(el => {
-                    if (el.id) inputs[el.id] = el.type === 'number' ? parseFloat(el.value) || 0 : el.value;
-                });
-                // Ensure om_energy and self_discharge are taken from techData if not directly in inputs
+                document.querySelectorAll('input, select').forEach(el => { if (el.id) inputs[el.id] = el.type === 'number' ? parseFloat(el.value) || 0 : el.value; });
                 const selectedTech = techData[inputs.technology_selector];
                 inputs.om_energy = selectedTech.om_energy;
-                inputs.self_discharge = selectedTech.self_discharge; 
+                inputs.self_discharge = selectedTech.self_discharge;
                 return inputs;
             }
 
             function handleProfileFile(event) {
                 const file = event.target.files[0];
                 if (!file) return;
-                
-                const feedbackEl = document.getElementById('file-name');
-                feedbackEl.textContent = `Lecture de ${file.name}...`;
-                feedbackEl.classList.remove('text-red-500', 'text-green-600');
-
+                fileNameDisplay.textContent = `Lecture de ${file.name}...`;
+                fileNameDisplay.classList.remove('text-red-500', 'text-green-600');
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const text = e.target.result;
-                        const lines = text.trim().split(/\r?\n/);
-                        if (lines.length < 2) throw new Error("Le fichier CSV doit contenir au moins une ligne d'en-tête et une ligne de données.");
-
+                        const lines = e.target.result.trim().split(/\r?\n/);
+                        if (lines.length < 8760) throw new Error("Le fichier CSV doit contenir au moins 8760 lignes de données.");
                         const headerLine = lines[0].toLowerCase();
                         const delimiter = headerLine.includes(';') ? ';' : ',';
                         const headers = headerLine.split(delimiter).map(h => h.trim().replace(/"/g, ''));
-
                         const prodIndex = headers.indexOf('production_wh_per_kwp');
                         const consIndex = headers.indexOf('consumption_wh');
-
-                        if (prodIndex === -1 || consIndex === -1) throw new Error("En-têtes requis ('production_wh_per_kwp', 'consumption_wh') introuvables.");
-
-                        const dataRows = lines.slice(1);
-                        profileData = dataRows.map(row => {
+                        if (prodIndex === -1 || consIndex === -1) throw new Error("En-têtes requis introuvables.");
+                        profileData = lines.slice(1).map(row => {
                             const values = row.split(delimiter);
-                            // Use parseFloat and check for finite numbers
                             const prodVal = parseFloat(values[prodIndex]);
                             const consVal = parseFloat(values[consIndex]);
-                            
-                            // Filter condition corrected: keep only rows where both values are finite numbers
-                            if (isFinite(prodVal) && isFinite(consVal)) {
-                                return { production_wh_per_kwp: prodVal, consumption_wh: consVal };
-                            }
-                            return null; // Return null for invalid rows
-                        }).filter(r => r !== null); // Remove null entries (invalid rows)
-
-                        if (profileData.length > 0) {
-                            feedbackEl.textContent = `${profileData.length} heures de données chargées avec succès.`;
-                            feedbackEl.classList.add('text-green-600');
+                            return (isFinite(prodVal) && isFinite(consVal)) ? { production_wh_per_kwp: prodVal, consumption_wh: consVal } : null;
+                        }).filter(Boolean);
+                        if (profileData.length >= 8760) {
+                            fileNameDisplay.textContent = `${profileData.length} heures de données chargées.`;
+                            fileNameDisplay.classList.add('text-green-600');
+                            weekSelector.value = '2025-W01';
+                            weekSelector.disabled = false;
                         } else {
-                            throw new Error("Aucune ligne de données valide n'a pu être lue.");
+                            throw new Error(`Données insuffisantes: ${profileData.length} lignes lues.`);
                         }
                     } catch (error) {
-                        feedbackEl.textContent = `Erreur de lecture : ${error.message}`;
-                        feedbackEl.classList.add('text-red-500');
+                        fileNameDisplay.textContent = `Erreur: ${error.message}`;
+                        fileNameDisplay.classList.add('text-red-500');
                         profileData = [];
+                        weekSelector.disabled = true;
                     }
                 };
                 reader.readAsText(file);
@@ -334,108 +263,49 @@
                 const chargePowerLimit_kW = inputs.power_capacity;
                 const dischargePowerLimit_kW = inputs.power_capacity;
                 const rte_decimal = inputs.round_trip_efficiency / 100;
-                // Self-discharge is %/day, convert to %/hour
                 const self_discharge_hourly_decimal = inputs.self_discharge / 100 / 24; 
-
-                // Efficiencies for single charge/discharge steps (often sqrt of round-trip)
                 const charge_eff_hourly = Math.sqrt(rte_decimal);
                 const discharge_eff_hourly = Math.sqrt(rte_decimal);
-
-                let soc_kWh = minSoc_kWh + usableCapacity_kWh / 2; // Initial SOC at 50% of usable capacity
+                let soc_kWh = minSoc_kWh + usableCapacity_kWh / 2;
                 let hourly = { soc: [], prod: [], cons: [], batteryCharge: [], batteryDischarge: [], gridImport: [], gridExport: [], hourlyNetCost: [] };
                 let totals = { import: 0, export: 0, charge: 0, discharge: 0, consumption: 0, production: 0, direct: 0 };
-                
-                // Simulate for the entire profile length to get accurate annual totals
-                const totalHours = profile.length;
-                
-                for (let i = 0; i < totalHours; i++) {
-                    const hour = profile[i];
-                    const production_kWh = (hour.production_wh_per_kwp * inputs.pv_peak_power) / 1000;
-                    const consumption_kWh = hour.consumption_wh / 1000;
-                    
-                    // Apply self-discharge before any operations for the hour
-                    soc_kWh = soc_kWh * (1 - self_discharge_hourly_decimal);
-                    // Ensure SOC stays within physical limits after self-discharge
-                    soc_kWh = Math.max(minSoc_kWh, Math.min(maxSoc_kWh, soc_kWh));
-
+                for (let i = 0; i < profile.length; i++) {
+                    const production_kWh = (profile[i].production_wh_per_kwp * inputs.pv_peak_power) / 1000;
+                    const consumption_kWh = profile[i].consumption_wh / 1000;
+                    soc_kWh = Math.max(minSoc_kWh, soc_kWh * (1 - self_discharge_hourly_decimal));
                     totals.production += production_kWh;
                     totals.consumption += consumption_kWh;
-
-                    let currentBatteryCharge_kWh = 0;
-                    let currentBatteryDischarge_kWh = 0;
-                    let currentGridImport_kWh = 0;
-                    let currentGridExport_kWh = 0;
-
-                    let netEnergy = production_kWh - consumption_kWh; // Positive for surplus, negative for deficit
-
-                    if (netEnergy > 0) { // Surplus PV
-                        // Energy available from PV for charging
+                    let netEnergy = production_kWh - consumption_kWh;
+                    let currentBatteryCharge_kWh = 0, currentBatteryDischarge_kWh = 0, currentGridImport_kWh = 0, currentGridExport_kWh = 0;
+                    if (netEnergy > 0) {
                         const availableForCharge = Math.min(netEnergy, chargePowerLimit_kW);
-                        // How much energy can be stored in battery considering its current SOC and charge efficiency
                         const maxChargeIntoBattery = (maxSoc_kWh - soc_kWh) / charge_eff_hourly; 
-                        
                         const actualChargeAmount_kWh = Math.min(availableForCharge, maxChargeIntoBattery);
-                        
-                        soc_kWh += actualChargeAmount_kWh * charge_eff_hourly; // Energy actually stored in battery
-                        currentBatteryCharge_kWh = actualChargeAmount_kWh; // Energy taken from surplus for charging
-                        totals.charge += currentBatteryCharge_kWh;
-                        
-                        let remainingSurplus = netEnergy - actualChargeAmount_kWh;
-                        currentGridExport_kWh = remainingSurplus;
-                        totals.export += currentGridExport_kWh;
-
-                    } else if (netEnergy < 0) { // Deficit
-                        // Energy needed from battery
+                        soc_kWh += actualChargeAmount_kWh * charge_eff_hourly;
+                        currentBatteryCharge_kWh = actualChargeAmount_kWh;
+                        currentGridExport_kWh = netEnergy - actualChargeAmount_kWh;
+                    } else if (netEnergy < 0) {
                         const neededFromBattery = Math.min(Math.abs(netEnergy), dischargePowerLimit_kW);
-                        // How much energy can be discharged from battery considering its current SOC and discharge efficiency
                         const maxDischargeFromBattery = (soc_kWh - minSoc_kWh) * discharge_eff_hourly;
-                        
                         const actualDischargeAmount_kWh = Math.min(neededFromBattery, maxDischargeFromBattery);
-                        
-                        soc_kWh -= actualDischargeAmount_kWh / discharge_eff_hourly; // Energy actually removed from battery
-                        currentBatteryDischarge_kWh = actualDischargeAmount_kWh; // Energy provided by battery to load
-                        totals.discharge += currentBatteryDischarge_kWh;
-
-                        let remainingDeficit = Math.abs(netEnergy) - actualDischargeAmount_kWh;
-                        currentGridImport_kWh = remainingDeficit;
-                        totals.import += currentGridImport_kWh;
+                        soc_kWh -= actualDischargeAmount_kWh / discharge_eff_hourly;
+                        currentBatteryDischarge_kWh = actualDischargeAmount_kWh;
+                        currentGridImport_kWh = Math.abs(netEnergy) - actualDischargeAmount_kWh;
                     }
-                    
-                    // Direct self-consumption: energy produced and consumed instantly
-                    // This is implicitly handled by the `netEnergy` calculation.
-                    // For `totals.direct`, it's the portion of consumption met by PV that didn't go through battery/grid.
-                    // Let's refine `totals.direct` calculation to be more explicit:
-                    // It's the consumption minus what was imported from grid and what was discharged from battery.
-                    // Or, it's the production minus what was exported to grid and what was charged into battery.
-                    // The simplest is: consumption - import + discharge_from_battery
-                    totals.direct = totals.direct + (consumption_kWh - currentGridImport_kWh - currentBatteryDischarge_kWh); // Accumulate direct self-consumption
-
-                    // Calculate hourly net financial cost/saving
-                    // Cost: grid import * charging_cost
-                    // Savings/Revenue: grid export * selling_price + (PV direct + battery discharge) * charging_cost (avoided cost)
-                    let hourlyNetCost_val = (currentGridImport_kWh * inputs.charging_cost); // Cost of importing from grid
-                    hourlyNetCost_val -= (currentGridExport_kWh * inputs.selling_price); // Revenue from exporting to grid
-                    
-                    // Savings from self-consumption (energy produced and consumed without grid interaction)
-                    // This is the value of the energy that did NOT have to be bought from the grid.
-                    // Energy met by PV directly: Math.min(production_kWh, consumption_kWh)
-                    // Energy met by battery discharge: currentBatteryDischarge_kWh
-                    const totalSelfConsumed_kWh = Math.min(production_kWh, consumption_kWh) + currentBatteryDischarge_kWh;
-                    hourlyNetCost_val -= (totalSelfConsumed_kWh * inputs.charging_cost); // Savings from avoiding grid purchase
-
-                    if (i < 24) { // Only store first 24 hours for charts
-                        hourly.soc.push(batteryCapacity_kWh > 0 ? (soc_kWh / batteryCapacity_kWh) * 100 : 0);
-                        hourly.prod.push(production_kWh * 1000); // Wh
-                        hourly.cons.push(consumption_kWh * 1000); // Wh
-                        hourly.batteryCharge.push(currentBatteryCharge_kWh * 1000); // Wh
-                        hourly.batteryDischarge.push(currentBatteryDischarge_kWh * 1000); // Wh
-                        hourly.gridImport.push(currentGridImport_kWh * 1000); // Wh
-                        hourly.gridExport.push(currentGridExport_kWh * 1000); // Wh
-                        hourly.hourlyNetCost.push(hourlyNetCost_val); // $
-                    }
+                    totals.charge += currentBatteryCharge_kWh;
+                    totals.discharge += currentBatteryDischarge_kWh;
+                    totals.import += currentGridImport_kWh;
+                    totals.export += currentGridExport_kWh;
+                    totals.direct += Math.min(production_kWh, consumption_kWh);
+                    hourly.soc.push(batteryCapacity_kWh > 0 ? (soc_kWh / batteryCapacity_kWh) * 100 : 0);
+                    hourly.prod.push(production_kWh * 1000);
+                    hourly.cons.push(consumption_kWh * 1000);
+                    hourly.batteryCharge.push(currentBatteryCharge_kWh * 1000);
+                    hourly.batteryDischarge.push(currentBatteryDischarge_kWh * 1000);
+                    hourly.gridImport.push(currentGridImport_kWh * 1000);
+                    hourly.gridExport.push(currentGridExport_kWh * 1000);
+                    hourly.hourlyNetCost.push((currentGridImport_kWh * inputs.charging_cost) - (currentGridExport_kWh * inputs.selling_price));
                 }
-
-                // Corrected annual equivalent cycles calculation: based on total discharged energy and usable capacity
                 const equivalentCycles = usableCapacity_kWh > 0 ? totals.discharge / usableCapacity_kWh : 0;
                 return { equivalentCycles, totals, hourly };
             }
@@ -446,809 +316,142 @@
                 const r = inputs.discount_rate / 100;
                 const deg_t = inputs.temporal_degradation / 100;
                 const eol_thresh = inputs.eol_threshold / 100;
-                const annual_cycles = simResults.equivalentCycles * 365; // Annualize daily cycles from simulation
-                const Life_cyc = inputs.cycle_lifetime; // Total cycle lifetime from inputs
-
-                // Calculate cycle degradation rate (Deg_c) based on total cycle lifetime and EOL threshold
-                // From formula (24) on page 283: Deg_c = 1 - (EoL_threshold)^(1/Life_cyc)
+                const annual_cycles = simResults.equivalentCycles;
+                const Life_cyc = inputs.cycle_lifetime;
                 const deg_c = Life_cyc > 0 ? (1 - Math.pow(eol_thresh, 1 / Life_cyc)) : 0;
-
-                // Calculate N_op (Operational Lifetime in years)
-                // N_op = ln(EoL_threshold) / (ln(1-Deg_t) + Cyc_pa * ln(1-Deg_c))
-                let N_op;
+                let N_op = 50;
                 const log_term_denominator = Math.log(1 - deg_t) + annual_cycles * Math.log(1 - deg_c);
-                if (log_term_denominator < 0 && eol_thresh > 0) {
-                    N_op = Math.log(eol_thresh) / log_term_denominator;
-                } else {
-                    N_op = 50; // Default to a long lifetime if degradation never reaches threshold or is zero
-                }
-                N_op = Math.max(0, N_op); // Ensure N_op is not negative
-                N_op = isFinite(N_op) ? N_op : 50;
-                N_op = Math.min(N_op, 50); // Cap at 50 years for practical purposes
-
-                // Initial Investment (CAPEX) - from formula (17) on page 282, simplified for Tcon=1
+                if (log_term_denominator < 0 && eol_thresh > 0) { N_op = Math.log(eol_thresh) / log_term_denominator; }
+                N_op = Math.min(50, Math.max(0, isFinite(N_op) ? N_op : 50));
                 const initial_investment = (inputs.investment_power * P_cap_kW) + (inputs.investment_energy * E_cap_kWh);
-                
-                let total_discounted_cost = initial_investment;
-                let total_discounted_energy_out = 0;
+                let total_discounted_cost = initial_investment, total_discounted_energy_out = 0;
                 const cost_components = { investment: initial_investment, om: 0, eol: 0, charging: 0 };
-
-                // Annualize daily simulation totals for annual financial calculations
-                const annual_discharge_base_kWh_sim = simResults.totals.discharge * 365;
-                const annual_charge_base_kWh_sim = simResults.totals.charge * 365;
-
-                // For each year of operation up to N_op
                 for (let n = 1; n <= N_op; n++) {
-                    const discount_factor = 1 / Math.pow(1 + r, n); // Standard end-of-year discounting
-                    
-                    // Degradation factor for year n (SOH at year n)
+                    const discount_factor = 1 / Math.pow(1 + r, n);
                     const SOH_at_year_n = Math.pow(1 - deg_t, n) * Math.pow(1 - deg_c, n * annual_cycles);
-                    
-                    // Annual discharged energy for year n (Eout_n) - from formula (27) on page 283
-                    // This is the actual energy delivered by the battery, adjusted for degradation
-                    const Eout_n = annual_discharge_base_kWh_sim * SOH_at_year_n;
+                    const Eout_n = simResults.totals.discharge * SOH_at_year_n;
                     total_discounted_energy_out += Eout_n * discount_factor;
-
-                    // Annual charged energy for year n (Ein_n) - used for charging cost
-                    // This is the energy input to the battery, adjusted for degradation
-                    const Ein_n = annual_charge_base_kWh_sim * SOH_at_year_n; // Assuming charge scales with SOH too
-
-                    // O&M cost for year n
-                    const annual_om_cost = (inputs.om_power * P_cap_kW) + (inputs.om_energy * Eout_n / 1000); // om_energy is $/MWh, Eout_n is kWh
-                    cost_components.om += annual_om_cost * discount_factor;
-
-                    // Charging cost for year n
-                    const annual_charging_cost = Ein_n * inputs.charging_cost;
-                    cost_components.charging += annual_charging_cost * discount_factor;
+                    const Ein_n = simResults.totals.charge * SOH_at_year_n;
+                    cost_components.om += ((inputs.om_power * P_cap_kW) + (inputs.om_energy * Eout_n / 1000)) * discount_factor;
+                    cost_components.charging += (Ein_n * inputs.selling_price) * discount_factor;
                 }
-
-                // End-of-life cost - from formula (26) on page 283
-                // Use SOH at N_op for EOL cost calculation
                 const final_soh_factor_at_N_op = Math.pow(1 - deg_t, N_op) * Math.pow(1 - deg_c, N_op * annual_cycles);
-                const final_energy_capacity_at_eol = E_cap_kWh * final_soh_factor_at_N_op;
-                cost_components.eol = (inputs.eol_cost_energy * final_energy_capacity_at_eol) / Math.pow(1 + r, N_op); // Discounted to present value
-
-                total_discounted_cost += cost_components.om + cost_components.charging - cost_components.eol; // EOL cost can be negative (revenue)
-
+                cost_components.eol = (inputs.eol_cost_energy * E_cap_kWh * final_soh_factor_at_N_op) / Math.pow(1 + r, N_op);
+                total_discounted_cost += cost_components.om + cost_components.charging - cost_components.eol;
                 const lcos = total_discounted_energy_out > 0 ? total_discounted_cost / total_discounted_energy_out : 0;
-                
                 const annuity_factor = (r > 0) ? (r * Math.pow(1 + r, N_op)) / (Math.pow(1 + r, N_op) - 1) : (N_op > 0 ? 1/N_op : 0);
                 const annualized_cost = total_discounted_cost * annuity_factor;
                 const acc = P_cap_kW > 0 ? annualized_cost / P_cap_kW : 0;
-                
-                // Annual economic balance calculation (simplified for this app, based on daily profile totals)
-                // This is a simplified annualization of the daily profile's financial impact
-                const daysInYear = 365;
-                const annual_savings_from_direct_consumption = simResults.totals.direct * inputs.charging_cost * daysInYear;
-                const annual_savings_from_battery_discharge = simResults.totals.discharge * inputs.charging_cost * daysInYear;
-                const annual_revenue_from_export = simResults.totals.export * inputs.selling_price * daysInYear;
-                const annual_cost_from_import = simResults.totals.import * inputs.charging_cost * daysInYear;
-
-                const annual_net_economic_balance = (annual_savings_from_direct_consumption + annual_savings_from_battery_discharge + annual_revenue_from_export) - annual_cost_from_import;
-                
+                const annual_net_economic_balance = ((simResults.totals.direct + simResults.totals.discharge) * inputs.charging_cost) + (simResults.totals.export * inputs.selling_price) - (simResults.totals.import * inputs.charging_cost);
                 const simple_payback = annual_net_economic_balance > 0 ? initial_investment / annual_net_economic_balance : Infinity;
-                const annual_net_cost = annualized_cost - annual_net_economic_balance; // This is the net cost of the storage system itself, not the overall system
-
-                return { N_op, lcos, acc, annual_net_cost, simple_payback, initial_investment, total_discounted_cost, total_discounted_energy_out, P_cap_kW, E_cap_kWh, deg_c, annuity_factor, cost_components, annual_net_economic_balance, annual_cycles };
+                return { N_op, lcos, acc, simple_payback, initial_investment, annual_cycles, E_cap_kWh, P_cap_kW, total_discounted_cost, total_discounted_energy_out, cost_components };
             }
-            
-            // --- DISPLAY & UI FUNCTIONS ---
-            function calculateAndShowResults() {
-                if (profileData.length === 0) {
-                    // Changed alert to a custom message for better UX in Canvas
-                    const messageBox = document.createElement('div');
-                    messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
-                    messageBox.innerHTML = `
-                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-                            <p class="text-lg font-semibold mb-4">Veuillez d'abord charger un fichier de profil CSV.</p>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700" onclick="this.parentNode.parentNode.remove()">OK</button>
-                        </div>
-                    `;
-                    document.body.appendChild(messageBox);
-                    return;
-                }
-                document.getElementById('results_columns').classList.remove('hidden');
-                document.getElementById('download_container').classList.remove('hidden');
 
+            // --- UI & DISPLAY FUNCTIONS ---
+            function calculateAndShowResults() {
+                if (profileData.length === 0) { showModal("Veuillez d'abord charger un fichier de profil CSV."); return; }
+                document.getElementById('results_columns').classList.remove('hidden');
+                
                 const currentInputs = getInputs();
                 const simResults = runProfileSimulation(currentInputs, profileData);
                 const mainResults = runFinancialCalculation(currentInputs, simResults);
                 
-                lastResults.main = { inputs: currentInputs, simResults, financialResults: mainResults };
+                lastResults = { inputs: currentInputs, simResults, financialResults: mainResults };
                 
                 displayMainResults(simResults, mainResults);
                 displayCalculationDetails(currentInputs, mainResults);
-                displayDailyCharts(simResults.hourly, simResults.totals, currentInputs); // Pass totals and inputs for analysis
+                updateAndDisplayWeeklyChart();
                 displayEnergyFlowChart(simResults);
-                // Hide comparative chart on new main calculation
                 document.getElementById('comparative_results_container').classList.add('hidden');
+                document.getElementById('optimization_results_container').classList.add('hidden');
+                document.getElementById('download_container').classList.remove('hidden');
             }
             
             function displayMainResults(sim, fin) {
                 const selfConsumptionRate = sim.totals.production > 0 ? (sim.totals.direct + sim.totals.discharge) / sim.totals.production * 100 : 0;
                 const selfSufficiencyRate = sim.totals.consumption > 0 ? (sim.totals.direct + sim.totals.discharge) / sim.totals.consumption * 100 : 0;
-
                 document.getElementById('results_content').innerHTML = `
                     <div class="mb-4"><h3 class="text-xl font-semibold mb-2">Bilan Énergétique Annuel</h3>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between"><span>Production PV:</span> <strong>${formatNumber(sim.totals.production, 0)} kWh</strong></div>
-                            <div class="flex justify-between"><span>Consommation:</span> <strong>${formatNumber(sim.totals.consumption, 0)} kWh</strong></div>
-                            <div class="flex justify-between"><span>Import Réseau:</span> <strong>${formatNumber(sim.totals.import, 0)} kWh</strong></div>
-                            <div class="flex justify-between"><span>Export Réseau:</span> <strong>${formatNumber(sim.totals.export, 0)} kWh</strong></div>
-                        </div>
+                        <div class="space-y-2 text-sm"><div class="flex justify-between"><span>Production PV:</span> <strong>${formatNumber(sim.totals.production, 0)} kWh</strong></div><div class="flex justify-between"><span>Consommation:</span> <strong>${formatNumber(sim.totals.consumption, 0)} kWh</strong></div><div class="flex justify-between"><span>Import Réseau:</span> <strong>${formatNumber(sim.totals.import, 0)} kWh</strong></div><div class="flex justify-between"><span>Export Réseau:</span> <strong>${formatNumber(sim.totals.export, 0)} kWh</strong></div></div>
                     </div>
                      <div class="mb-4"><h3 class="text-xl font-semibold mb-2">Performance du Système</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><p class="text-2xl font-bold text-green-600">${formatNumber(selfConsumptionRate, 1)}%</p><p class="text-sm text-gray-500">Taux d'autoconsommation</p></div>
-                            <div><p class="text-2xl font-bold text-green-600">${formatNumber(selfSufficiencyRate, 1)}%</p><p class="text-sm text-gray-500">Taux d'autosuffisance</p></div>
-                        </div>
+                        <div class="grid grid-cols-2 gap-4"><div><p class="text-2xl font-bold text-green-600">${formatNumber(selfConsumptionRate, 1)}%</p><p class="text-sm text-gray-500">Taux d'autoconsommation</p></div><div><p class="text-2xl font-bold text-green-600">${formatNumber(selfSufficiencyRate, 1)}%</p><p class="text-sm text-gray-500">Taux d'autosuffisance</p></div></div>
                     </div>
                     <div class="mb-4"><h3 class="text-xl font-semibold mb-2">Analyse Financière</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><p class="text-2xl font-bold text-indigo-600">${formatCurrency(fin.lcos, '$/kWh')}</p><p class="text-sm text-gray-500">LCOS</p></div>
-                            <div><p class="text-2xl font-bold text-green-600">${isFinite(fin.simple_payback) ? formatNumber(fin.simple_payback, 1) + ' ans' : 'N/A'}</p><p class="text-sm text-gray-500">Retour sur Investissement</p></div>
-                            <div><p class="text-2xl font-bold text-gray-800">${formatNumber(fin.N_op, 1)} ans</p><p class="text-sm text-gray-500">Durée de vie opérationnelle</p></div>
-                            <div><p class="text-2xl font-bold text-gray-800">${formatNumber(fin.annual_cycles, 0)} cycles/an</p><p class="text-sm text-gray-500">Cycles équivalents annuels</p></div>
-                        </div>
-                    </div>
-                `;
+                        <div class="grid grid-cols-2 gap-4"><div><p class="text-2xl font-bold text-indigo-600">${formatCurrency(fin.lcos, ' $/kWh')}</p><p class="text-sm text-gray-500">LCOS</p></div><div><p class="text-2xl font-bold text-green-600">${isFinite(fin.simple_payback) ? formatNumber(fin.simple_payback, 1) + ' ans' : 'N/A'}</p><p class="text-sm text-gray-500">Retour sur Investissement</p></div><div><p class="text-2xl font-bold text-gray-800">${formatNumber(fin.N_op, 1)} ans</p><p class="text-sm text-gray-500">Durée de vie</p></div><div><p class="text-2xl font-bold text-gray-800">${formatNumber(fin.annual_cycles, 0)} cycles/an</p><p class="text-sm text-gray-500">Cycles équivalents</p></div></div>
+                    </div>`;
             }
 
-            function displayCalculationDetails(inputs, r) {
-                document.getElementById('calculation_details').innerHTML = `
-                    <div class="calc-step">
-                        <h3 class="calc-title">1. Investissement Initial (CAPEX)</h3>
-                        <p class="calc-formula">(${formatCurrency(inputs.investment_power, '$/kW')} * ${formatNumber(r.P_cap_kW, 2)} kW) + (${formatCurrency(inputs.investment_energy, '$/kWh')} * ${formatNumber(r.E_cap_kWh, 2)} kWh) = <span class="calc-value">${formatCurrency(r.initial_investment, '$')}</span></p>
-                    </div>
-                    <div class="calc-step">
-                        <h3 class="calc-title">2. Coût Actualisé Total</h3>
-                        <p class="calc-formula">CAPEX + Σ(Coûts O&M Actualisés) + Σ(Coûts de Charge Actualisés) - Valeur Fin de Vie Actualisée = <span class="calc-value">${formatCurrency(r.total_discounted_cost, '$')}</span></p>
-                        <p class="text-xs text-gray-600 mt-2">Détail des composants :</p>
-                        <ul class="list-disc list-inside text-xs text-gray-600 ml-4">
-                            <li>O&M Actualisé : ${formatCurrency(r.cost_components.om, '$')}</li>
-                            <li>Charge Actualisée : ${formatCurrency(r.cost_components.charging, '$')}</li>
-                            <li>Fin de Vie Actualisée : ${formatCurrency(r.cost_components.eol, '$')}</li>
-                        </ul>
-                    </div>
-                    <div class="calc-step">
-                        <h3 class="calc-title">3. Énergie Totale Fournie (Actualisée)</h3>
-                        <p class="calc-formula">Σ(Décharge annuelle actualisée) = <span class="calc-value">${formatNumber(r.total_discounted_energy_out, 0)} kWh</span></p>
-                    </div>
-                    <div class="calc-step">
-                        <h3 class="calc-title">4. LCOS (Levelized Cost of Storage)</h3>
-                        <p class="calc-formula">Coût Actualisé Total / Énergie Fournie Totale Actualisée = <span class="calc-value">${formatCurrency(r.lcos, '$/kWh')}</span></p>
-                    </div>
-                    <div class="calc-step">
-                        <h3 class="calc-title">5. Durée de Vie Opérationnelle (N_op)</h3>
-                        <p class="calc-formula">Calculée en fonction de la dégradation temporelle (${formatNumber(inputs.temporal_degradation, 2)}%/an) et de la dégradation par cycle (taux calculé à partir de ${formatNumber(inputs.cycle_lifetime, 0)} cycles et seuil SOH de ${formatNumber(inputs.eol_threshold, 0)}%) : <span class="calc-value">${formatNumber(r.N_op, 1)} ans</span></p>
-                        <p class="text-xs text-gray-600 mt-2">Taux de dégradation par cycle : ${formatNumber(r.deg_c * 100, 4)}% par cycle</p>
-                    </div>
-                `;
-            }
+            function updateAndDisplayWeeklyChart() {
+                if (!lastResults) return;
+                const weekValue = weekSelector.value; 
+                if (!weekValue) return;
 
-            function displayDailyCharts(hourlyData, totals, inputs) { // Added totals and inputs for analysis
-                const first24h = {
-                    soc: hourlyData.soc.slice(0, 24),
-                    prod: hourlyData.prod.slice(0, 24),
-                    cons: hourlyData.cons.slice(0, 24),
-                    batteryCharge: hourlyData.batteryCharge.slice(0, 24),
-                    batteryDischarge: hourlyData.batteryDischarge.slice(0, 24),
-                    gridImport: hourlyData.gridImport.slice(0, 24),
-                    gridExport: hourlyData.gridExport.slice(0, 24),
-                    hourlyNetCost: hourlyData.hourlyNetCost.slice(0, 24), // Data for hourly net cost
-                    labels: Array.from({length: 24}, (_, i) => `${i}:00`)
-                };
+                const weekNumber = parseInt(weekValue.split('-W')[1], 10);
+                const startHour = (weekNumber - 1) * 168;
+                if (startHour + 168 > lastResults.simResults.hourly.soc.length) return;
 
-                // Destroy existing charts before creating new ones to prevent memory leaks
-                if(charts.prodCons) charts.prodCons.destroy();
-                charts.prodCons = new Chart(document.getElementById('prod_cons_chart').getContext('2d'), {
-                    type: 'line',
-                    data: { labels: first24h.labels, datasets: [
-                        { label: 'Production (Wh)', data: first24h.prod, borderColor: 'rgb(52, 211, 153)', backgroundColor: 'rgba(52, 211, 153, 0.2)', fill: true, tension: 0.1 },
-                        { label: 'Consommation (Wh)', data: first24h.cons, borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.2)', fill: true, tension: 0.1 }
-                    ]},
-                    options: { scales: { y: { title: { display: true, text: 'Puissance (Wh)' } } } }
-                });
-
-                if(charts.soc) charts.soc.destroy();
-                charts.soc = new Chart(document.getElementById('soc_chart').getContext('2d'), {
-                    type: 'line',
-                    data: { labels: first24h.labels, datasets: [{
-                        label: 'État de Charge (SOC)', data: first24h.soc, borderColor: 'rgb(79, 70, 229)', backgroundColor: 'rgba(79, 70, 229, 0.2)', fill: true, tension: 0.1
-                    }]},
-                    options: { scales: { y: { min: 0, max: 100, title: { display: true, text: 'SOC (%)' } } } }
-                });
-
-                // --- Battery Power Flow Chart ---
-                if(charts.batteryPower) charts.batteryPower.destroy();
-                charts.batteryPower = new Chart(document.getElementById('battery_power_chart').getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: first24h.labels,
-                        datasets: [
-                            {
-                                label: 'Charge Batterie (Wh)',
-                                data: first24h.batteryCharge,
-                                backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
-                            },
-                            {
-                                label: 'Décharge Batterie (Wh)',
-                                data: first24h.batteryDischarge.map(val => -val), // Negative for visualization below zero
-                                backgroundColor: 'rgba(239, 68, 68, 0.7)', // Red
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Flux de Puissance de la Batterie (Charge/Décharge)'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        label += formatNumber(Math.abs(context.parsed.y), 0) + ' Wh';
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                stacked: true,
-                                title: {
-                                    display: true,
-                                    text: 'Heure de la journée'
-                                }
-                            },
-                            y: {
-                                stacked: true,
-                                title: {
-                                    display: true,
-                                    text: 'Puissance (Wh)'
-                                },
-                                beginAtZero: true // Changed to true for better visualization of charge/discharge
-                            }
-                        }
-                    }
-                });
-
-                // --- Grid Interaction (Import/Export) Chart ---
-                if(charts.gridInteraction) charts.gridInteraction.destroy();
-                charts.gridInteraction = new Chart(document.getElementById('grid_interaction_chart').getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: first24h.labels,
-                        datasets: [
-                            {
-                                label: 'Import Réseau (Wh)',
-                                data: first24h.gridImport,
-                                backgroundColor: 'rgba(255, 159, 64, 0.7)', // Orange
-                            },
-                            {
-                                label: 'Export Réseau (Wh)',
-                                data: first24h.gridExport.map(val => -val), // Negative for visualization below zero
-                                backgroundColor: 'rgba(75, 192, 192, 0.7)', // Teal
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Interaction avec le Réseau (Import/Export)'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        label += formatNumber(Math.abs(context.parsed.y), 0) + ' Wh';
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                stacked: true,
-                                title: {
-                                    display: true,
-                                    text: 'Heure de la journée'
-                                }
-                            },
-                            y: {
-                                stacked: true,
-                                title: {
-                                    display: true,
-                                    text: 'Énergie (Wh)'
-                                },
-                                beginAtZero: true // Changed to true for better visualization of import/export
-                            }
-                        }
-                    }
-                });
-
-                // --- NEW CHART: Hourly Net Cost ---
-                if(charts.hourlyNetCost) charts.hourlyNetCost.destroy();
-                charts.hourlyNetCost = new Chart(document.getElementById('hourly_net_cost_chart').getContext('2d'), {
-                    type: 'bar', // Bar chart is good for showing positive/negative values
-                    data: {
-                        labels: first24h.labels,
-                        datasets: [
-                            {
-                                label: 'Coût Net / Économie ($)',
-                                data: first24h.hourlyNetCost,
-                                // Color bars based on value: red for cost (positive), green for saving (negative)
-                                backgroundColor: first24h.hourlyNetCost.map(value => value >= 0 ? 'rgba(255, 99, 132, 0.7)' : 'rgba(75, 192, 192, 0.7)'),
-                                borderColor: first24h.hourlyNetCost.map(value => value >= 0 ? 'rgb(255, 99, 132)' : 'rgb(75, 192, 192)'),
-                                borderWidth: 1
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Coût Net / Économie Horaire ($)'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        // Format value as currency
-                                        label += formatCurrency(context.parsed.y, '$');
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Heure de la journée'
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Coût Net / Économie ($)'
-                                },
-                                beginAtZero: true // Allow negative values for savings, but start from 0 to show clear positive/negative
-                            }
-                        }
-                    }
-                });
-
-                // --- Daily Profile Analysis ---
-                let analysis = `
-                    <p>Ce profil journalier fournit une vue détaillée du comportement énergétique de votre système sur 24 heures.</p>
-                    <ul class="list-disc list-inside mt-2 space-y-1">
-                        <li>Le graphique <strong>"Production vs Consommation"</strong> montre les périodes de surplus solaire (quand la production dépasse la consommation) et de déficit (quand la consommation est plus élevée). Typiquement, la production PV est maximale en milieu de journée, tandis que la consommation peut avoir des pics le matin et le soir.</li>
-                        <li>L'<strong>"État de Charge (SOC)"</strong> de la batterie reflète la gestion de ces flux. Pendant les heures de surplus solaire, le SOC augmente à mesure que la batterie se charge. Pendant les périodes de déficit (matin, soir, nuit), le SOC diminue car la batterie décharge pour couvrir une partie de la consommation.</li>
-                        <li>Le graphique <strong>"Flux de Puissance de la Batterie"</strong> illustre précisément quand et à quelle intensité la batterie charge (barres positives) et décharge (barres négatives). Cela met en évidence le rôle actif de la batterie dans l'équilibrage des besoins énergétiques.</li>
-                        <li>Le graphique <strong>"Interaction avec le Réseau"</strong> montre les moments où le système importe de l'énergie du réseau (barres positives) et exporte le surplus (barres négatives). Idéalement, l'importation est minimisée et l'exportation est optimisée pour la monétisation.</li>
-                        <li>Enfin, le graphique <strong>"Coût Net / Économie Horaire"</strong> représente l'impact financier direct de votre système pour chaque heure. Les barres positives indiquent un coût net (vous dépensez de l'argent, principalement par l'importation du réseau), tandis que les barres négatives indiquent une économie nette ou un revenu (grâce à l'autoconsommation ou à l'exportation). Ce graphique est crucial pour comprendre la rentabilité horaire de votre système.</li>
-                    </ul>
-                    <p class="mt-4">Ces graphiques sont essentiels pour comprendre comment votre système gère les fluctuations de production et de consommation, et pour identifier les opportunités d'optimisation.</p>
-                `;
-                analysisTextElement.innerHTML = analysis;
-            }
-            
-            function displayEnergyFlowChart(sim) {
-                const ctx = document.getElementById('energy_flow_chart').getContext('2d');
-                // Calculate losses based on total charged and discharged energy, considering RTE
-                // The total charge and discharge from simResults.totals already account for hourly RTE and self-discharge.
-                // So, losses are simply total charged - total discharged.
-                const losses = sim.totals.charge - sim.totals.discharge; 
-
-                if(charts.flow) charts.flow.destroy();
-                charts.flow = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Production PV', 'Consommation Totale', 'Import Réseau', 'Export Réseau', 'Charge Batterie', 'Décharge Batterie', 'Pertes Batterie'],
-                        datasets: [{
-                            label: 'Énergie Annuelle (kWh)',
-                            data: [
-                                sim.totals.production,
-                                sim.totals.consumption,
-                                sim.totals.import,
-                                sim.totals.export,
-                                sim.totals.charge,
-                                sim.totals.discharge,
-                                losses
-                            ],
-                            backgroundColor: [
-                                'rgba(52, 211, 153, 0.7)', // Production PV (Green)
-                                'rgba(249, 115, 22, 0.7)',  // Consommation Totale (Orange)
-                                'rgba(255, 159, 64, 0.7)',  // Import Réseau (Light Orange)
-                                'rgba(75, 192, 192, 0.7)',  // Export Réseau (Teal)
-                                'rgba(59, 130, 246, 0.7)',  // Charge Batterie (Blue)
-                                'rgba(239, 68, 68, 0.7)',   // Décharge Batterie (Red)
-                                'rgba(156, 163, 175, 0.7)'  // Pertes Batterie (Gray)
-                            ],
-                            borderColor: [
-                                'rgb(52, 211, 153)',
-                                'rgb(249, 115, 22)',
-                                'rgb(255, 159, 64)',
-                                'rgb(75, 192, 192)',
-                                'rgb(59, 130, 246)',
-                                'rgb(239, 68, 68)',
-                                'rgb(156, 163, 175)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false // No legend needed for single dataset bar chart
-                            },
-                            title: {
-                                display: true,
-                                text: 'Bilan des Flux Énergétiques Annuels (kWh)'
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Énergie (kWh)'
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            function populateTechInputs(techKey) {
-                const data = techData[techKey];
-                if (data) {
-                    document.getElementById('investment_power').value = data.investment_power;
-                    document.getElementById('investment_energy').value = data.investment_energy;
-                    document.getElementById('round_trip_efficiency').value = data.round_trip_efficiency;
-                    document.getElementById('depth_of_discharge').value = data.depth_of_discharge;
-                    document.getElementById('cycle_lifetime').value = data.cycle_lifetime;
-                    document.getElementById('temporal_degradation').value = data.temporal_degradation;
-                    document.getElementById('eol_threshold').value = data.eol_threshold;
-                    document.getElementById('om_power').value = data.om_power;
-                    document.getElementById('eol_cost_energy').value = data.eol_cost_energy;
+                const chartData = {};
+                for (const key in lastResults.simResults.hourly) {
+                    chartData[key] = lastResults.simResults.hourly[key].slice(startHour, startHour + 168);
                 }
+                displayWeeklyOverviewChart(chartData, startHour);
             }
 
-            function runComparativeAnalysis() {
-                if (profileData.length === 0) {
-                    const messageBox = document.createElement('div');
-                    messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
-                    messageBox.innerHTML = `
-                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-                            <p class="text-lg font-semibold mb-4">Veuillez d'abord charger un fichier de profil CSV pour la comparaison.</p>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700" onclick="this.parentNode.parentNode.remove()">OK</button>
-                        </div>
-                    `;
-                    document.body.appendChild(messageBox);
-                    return;
-                }
+            function displayWeeklyOverviewChart(weeklyData, startHourOffset) {
+                if (!weeklyData) return;
 
-                const currentInputs = getInputs();
-                const results = [];
                 const labels = [];
-                const lcosValues = [];
-                const paybackValues = [];
-
-                for (const techKey in techData) {
-                    const tempInputs = { ...currentInputs, ...techData[techKey] }; // Override with tech-specific params
-                    // Ensure the discharge duration is consistent for comparison, or let it vary naturally with techData
-                    // For this comparison, we'll use the current discharge_duration from inputs, but apply techData's other params
-                    tempInputs.discharge_duration = currentInputs.discharge_duration; // Keep user's set discharge duration for consistency
-
-                    const simResults = runProfileSimulation(tempInputs, profileData);
-                    const financialResults = runFinancialCalculation(tempInputs, simResults);
-                    
-                    labels.push(techData[techKey].name);
-                    lcosValues.push(financialResults.lcos);
-                    paybackValues.push(isFinite(financialResults.simple_payback) ? financialResults.simple_payback : null);
+                const startDate = new Date('2025-01-01T00:00:00');
+                for (let i = 0; i < 168; i++) {
+                    labels.push(new Date(startDate.getTime() + (startHourOffset + i) * 3600 * 1000));
                 }
+                
+                const batteryFlow = weeklyData.batteryDischarge.map((d, i) => d - weeklyData.batteryCharge[i]);
 
-                document.getElementById('comparative_results_container').classList.remove('hidden');
-
-                if(charts.comparative) charts.comparative.destroy();
-                charts.comparative = new Chart(document.getElementById('comparative_chart').getContext('2d'), {
+                if (charts.weeklyOverview) charts.weeklyOverview.destroy();
+                charts.weeklyOverview = new Chart(document.getElementById('weekly_overview_chart').getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: labels,
                         datasets: [
-                            {
-                                label: 'LCOS ($/kWh)',
-                                data: lcosValues,
-                                backgroundColor: 'rgba(79, 70, 229, 0.7)', // Indigo
-                                borderColor: 'rgb(79, 70, 229)',
-                                borderWidth: 1
-                            },
-                            {
-                                label: 'Retour sur Investissement (années)',
-                                data: paybackValues,
-                                backgroundColor: 'rgba(52, 211, 153, 0.7)', // Green
-                                borderColor: 'rgb(52, 211, 153)',
-                                borderWidth: 1
-                            }
+                            { label: 'Consommation (Wh)', data: weeklyData.cons, type: 'line', borderColor: 'black', borderWidth: 2, pointRadius: 0, order: 0 },
+                            { label: 'Production PV (Wh)', data: weeklyData.prod, type: 'line', borderColor: '#facc15', borderWidth: 2, pointRadius: 0, order: 1 },
+                            { label: 'Flux Batterie (Wh)', data: batteryFlow, backgroundColor: batteryFlow.map(v => v >= 0 ? 'rgba(54, 162, 235, 0.7)' : 'rgba(239, 68, 68, 0.7)'), order: 3 },
+                            { label: 'SOC (%)', data: weeklyData.soc, type: 'line', borderColor: '#8b5cf6', yAxisID: 'y1', pointRadius: 0, borderWidth: 2, order: 2 }
                         ]
                     },
                     options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Comparaison LCOS et Retour sur Investissement par Technologie'
-                            }
-                        },
+                        responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' },
                         scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Valeur'
-                                }
-                            }
+                            x: { type: 'time', time: { unit: 'day' }, title: { display: true, text: 'Jour de la semaine' } },
+                            y: { title: { display: true, text: 'Puissance (Wh)' } },
+                            y1: { type: 'linear', position: 'right', min: 0, max: 100, title: { display: true, text: 'SOC (%)' }, grid: { drawOnChartArea: false } }
                         }
                     }
                 });
             }
-
-            function runOptimization() {
-                if (profileData.length === 0) {
-                    const messageBox = document.createElement('div');
-                    messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
-                    messageBox.innerHTML = `
-                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-                            <p class="text-lg font-semibold mb-4">Veuillez d'abord charger un fichier de profil CSV pour l'optimisation.</p>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700" onclick="this.parentNode.parentNode.remove()">OK</button>
-                        </div>
-                    `;
-                    document.body.appendChild(messageBox);
-                    return;
-                }
-
-                const minCap = parseFloat(document.getElementById('optim_min_cap').value);
-                const maxCap = parseFloat(document.getElementById('optim_max_cap').value);
-                const step = parseFloat(document.getElementById('optim_step').value);
-
-                if (isNaN(minCap) || isNaN(maxCap) || isNaN(step) || minCap <= 0 || step <= 0 || minCap > maxCap) {
-                    const messageBox = document.createElement('div');
-                    messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
-                    messageBox.innerHTML = `
-                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-                            <p class="text-lg font-semibold mb-4">Veuillez entrer des valeurs valides pour l'optimisation (Min > 0, Step > 0, Min <= Max).</p>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700" onclick="this.parentNode.parentNode.remove()">OK</button>
-                        </div>
-                    `;
-                    document.body.appendChild(messageBox);
-                    return;
-                }
-
-                const currentInputs = getInputs();
-                const capacities = [];
-                const lcosValues = [];
-                const paybackValues = [];
-                let bestLCOS = Infinity;
-                let bestCapacity = 0;
-
-                for (let cap = minCap; cap <= maxCap; cap += step) {
-                    // When optimizing, we vary the power_capacity (kW) and thus the total battery energy capacity (kWh)
-                    // The discharge_duration (hours) remains constant as it's a user input for the "shape" of the battery
-                    const tempInputs = { ...currentInputs, power_capacity: cap }; 
-                    const simResults = runProfileSimulation(tempInputs, profileData);
-                    const financialResults = runFinancialCalculation(tempInputs, simResults);
-                    
-                    capacities.push(cap);
-                    lcosValues.push(financialResults.lcos);
-                    paybackValues.push(isFinite(financialResults.simple_payback) ? financialResults.simple_payback : null);
-
-                    // Find the optimal capacity based on LCOS
-                    if (financialResults.lcos < bestLCOS && financialResults.lcos > 0) { // Ensure LCOS is positive and valid
-                        bestLCOS = financialResults.lcos;
-                        bestCapacity = cap;
-                    }
-                }
-
-                document.getElementById('optimization_results_container').classList.remove('hidden');
-                document.getElementById('optimization_summary').textContent = `Capacité optimale pour le LCOS : ${formatNumber(bestCapacity, 1)} kW avec un LCOS de ${formatCurrency(bestLCOS, '$/kWh')}.`;
-
-                if(charts.optimization) charts.optimization.destroy();
-                charts.optimization = new Chart(document.getElementById('optimization_chart').getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: capacities.map(c => `${c} kW`),
-                        datasets: [
-                            {
-                                label: 'LCOS ($/kWh)',
-                                data: lcosValues,
-                                borderColor: 'rgb(79, 70, 229)', // Indigo
-                                backgroundColor: 'rgba(79, 70, 229, 0.2)',
-                                fill: false,
-                                tension: 0.1,
-                                yAxisID: 'y'
-                            },
-                            {
-                                label: 'Retour sur Investissement (années)',
-                                data: paybackValues,
-                                borderColor: 'rgb(52, 211, 153)', // Green
-                                backgroundColor: 'rgba(52, 211, 153, 0.2)',
-                                fill: false,
-                                tension: 0.1,
-                                yAxisID: 'y1'
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Optimisation de la Taille de la Batterie (LCOS et Retour sur Investissement)'
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Puissance Nominale (kW)'
-                                }
-                            },
-                            y: {
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                title: {
-                                    display: true,
-                                    text: 'LCOS ($/kWh)'
-                                },
-                                beginAtZero: true // Ensure LCOS starts from zero
-                            },
-                            y1: {
-                                type: 'linear',
-                                display: true,
-                                position: 'right',
-                                title: {
-                                    display: true,
-                                    text: 'Retour sur Investissement (années)'
-                                },
-                                grid: {
-                                    drawOnChartArea: false // Only draw grid lines for the first Y axis
-                                },
-                                beginAtZero: true // Ensure payback starts from zero
-                            }
-                        }
-                    }
-                });
-            }
-
-            function downloadReport() {
-                if (!lastResults.main) {
-                    const messageBox = document.createElement('div');
-                    messageBox.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50';
-                    messageBox.innerHTML = `
-                        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
-                            <p class="text-lg font-semibold mb-4">Veuillez lancer une simulation avant de télécharger le rapport.</p>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700" onclick="this.parentNode.parentNode.remove()">OK</button>
-                        </div>
-                    `;
-                    document.body.appendChild(messageBox);
-                    return;
-                }
-
-                const { inputs, simResults, financialResults } = lastResults.main;
-                
-                // New section for raw PV and Consumption profile
-                const pv_raw_data = [
-                    ["Profil PV et Consommation Bruts (Wh) - Premier Jour"],
-                    ["Heure", "Production PV (Wh)", "Consommation (Wh)"]
-                ];
-                for (let i = 0; i < Math.min(24, profileData.length); i++) {
-                    pv_raw_data.push([
-                        `${i}:00`,
-                        profileData[i].production_wh_per_kwp * inputs.pv_peak_power, // Convert to actual Wh
-                        profileData[i].consumption_wh
-                    ]);
-                }
-                pv_raw_data.push([]); // Add an empty row for separation
-
-                const ws_data = [
-                    ["Calculateur de Stockage d'Énergie - Rapport"],
-                    [],
-                    ...pv_raw_data, // Insert new section here
-                    ["Paramètres d'entrée"],
-                    ["Puissance Crête PV (kWp)", inputs.pv_peak_power],
-                    ["Technologie de Stockage", inputs.technology_selector],
-                    ["Puissance nominale (kW)", inputs.power_capacity],
-                    ["Durée de décharge (heures)", inputs.discharge_duration],
-                    ["Coût d'inv. - Puissance ($/kW)", inputs.investment_power],
-                    ["Coût d'inv. - Énergie ($/kWh)", inputs.investment_energy],
-                    ["Rendement A/R (%)", inputs.round_trip_efficiency],
-                    ["Profondeur de Décharge (%)", inputs.depth_of_discharge],
-                    ["Durée de vie (cycles)", inputs.cycle_lifetime],
-                    ["Dégradation temporelle (% / an)", inputs.temporal_degradation],
-                    ["Seuil fin de vie (SOH %)", inputs.eol_threshold],
-                    ["Prix Achat Électricité ($/kWh)", inputs.charging_cost],
-                    ["Prix Vente Surplus ($/kWh)", inputs.selling_price],
-                    ["O&M - Puissance ($/kW-an)", inputs.om_power],
-                    ["Coût fin de vie (valeur $/kWh)", inputs.eol_cost_energy],
-                    ["Taux d'actualisation (%)", inputs.discount_rate],
-                    [],
-                    ["Résultats de la Simulation et Financiers"],
-                    ["Production PV Annuelle (kWh)", simResults.totals.production],
-                    ["Consommation Annuelle (kWh)", simResults.totals.consumption],
-                    ["Import Réseau Annuel (kWh)", simResults.totals.import],
-                    ["Export Réseau Annuel (kWh)", simResults.totals.export],
-                    ["Taux d'autoconsommation (%)", simResults.totals.production > 0 ? (simResults.totals.direct + simResults.totals.discharge) / simResults.totals.production * 100 : 0],
-                    ["Taux d'autosuffisance (%)", simResults.totals.consumption > 0 ? (simResults.totals.direct + simResults.totals.discharge) / simResults.totals.consumption * 100 : 0],
-                    ["Cycles Équivalents Annuels", financialResults.annual_cycles], // Use financialResults.annual_cycles for consistency
-                    ["Durée de vie opérationnelle (années)", financialResults.N_op],
-                    ["LCOS ($/kWh)", financialResults.lcos],
-                    ["ACC ($/kW-an)", financialResults.acc],
-                    ["Coût Net Annualisé ($/an)", financialResults.annual_net_cost],
-                    ["Retour sur Investissement Simple (années)", isFinite(financialResults.simple_payback) ? financialResults.simple_payback : "N/A"],
-                    [],
-                    ["Profil Journalier (Wh) - Premier Jour"],
-                    ["Heure", "Production", "Consommation", "SOC (%)", "Charge Batterie", "Décharge Batterie", "Import Réseau", "Export Réseau", "Coût Net ($)"] // Updated header for net cost
-                ];
-
-                // Add hourly data for the main daily profile
-                for (let i = 0; i < 24; i++) {
-                    ws_data.push([
-                        `${i}:00`,
-                        simResults.hourly.prod[i],
-                        simResults.hourly.cons[i],
-                        simResults.hourly.soc[i],
-                        simResults.hourly.batteryCharge[i],
-                        simResults.hourly.batteryDischarge[i],
-                        simResults.hourly.gridImport[i],
-                        simResults.hourly.gridExport[i],
-                        simResults.hourly.hourlyNetCost[i] // Added hourlyNetCost to Excel export
-                    ]);
-                }
-
-                const ws = XLSX.utils.aoa_to_sheet(ws_data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Rapport Simulation");
-                XLSX.writeFile(wb, "Rapport_Stockage_Energie.xlsx");
-            }
+            
+            // --- Other Functions ---
+            function displayEnergyFlowChart(sim) { const ctx = document.getElementById('energy_flow_chart').getContext('2d'); const losses = sim.totals.charge - sim.totals.discharge; if(charts.flow) charts.flow.destroy(); charts.flow = new Chart(ctx, { type: 'bar', data: { labels: ['Production PV', 'Consommation Totale', 'Import Réseau', 'Export Réseau', 'Charge Batterie', 'Décharge Batterie', 'Pertes Batterie'], datasets: [{ label: 'Énergie Annuelle (kWh)', data: [sim.totals.production, sim.totals.consumption, sim.totals.import, sim.totals.export, sim.totals.charge, sim.totals.discharge, losses], backgroundColor: ['rgba(52, 211, 153, 0.7)', 'rgba(249, 115, 22, 0.7)', 'rgba(255, 159, 64, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(156, 163, 175, 0.7)'], }] }, options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'Bilan des Flux Énergétiques Annuels (kWh)' } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Énergie (kWh)' } } } } }); }
+            function displayCalculationDetails(inputs, r) { document.getElementById('calculation_details').innerHTML = `<div class="calc-step"><h3 class="calc-title">1. Investissement Initial (CAPEX)</h3><p class="calc-formula">(${formatCurrency(inputs.investment_power, '$/kW')} * ${formatNumber(r.P_cap_kW, 2)} kW) + (${formatCurrency(inputs.investment_energy, '$/kWh')} * ${formatNumber(r.E_cap_kWh, 2)} kWh) = <span class="calc-value">${formatCurrency(r.initial_investment, '$')}</span></p></div><div class="calc-step"><h3 class="calc-title">2. Coût Actualisé Total</h3><p class="calc-formula">CAPEX + Σ(O&M) + Σ(Charge) - Fin de Vie = <span class="calc-value">${formatCurrency(r.total_discounted_cost, '$')}</span></p></div><div class="calc-step"><h3 class="calc-title">3. Énergie Totale Fournie (Actualisée)</h3><p class="calc-formula">Σ(Décharge annuelle actualisée) = <span class="calc-value">${formatNumber(r.total_discounted_energy_out, 0)} kWh</span></p></div><div class="calc-step"><h3 class="calc-title">4. LCOS</h3><p class="calc-formula">Coût Actualisé Total / Énergie Fournie Totale = <span class="calc-value">${formatCurrency(r.lcos, '$/kWh')}</span></p></div><div class="calc-step"><h3 class="calc-title">5. Durée de Vie Opérationnelle (N_op)</h3><p class="calc-formula">Calculée à ${formatNumber(r.annual_cycles,0)} cycles/an : <span class="calc-value">${formatNumber(r.N_op, 1)} ans</span></p></div>`; }
+            function populateTechInputs(techKey) { const data = techData[techKey]; if (data) { Object.keys(data).forEach(key => { const el = document.getElementById(key.replace(/_([a-z])/g, g => g[1].toUpperCase())); if (el) el.value = data[key]; }); document.getElementById('investment_power').value = data.investment_power; document.getElementById('investment_energy').value = data.investment_energy; document.getElementById('round_trip_efficiency').value = data.round_trip_efficiency; document.getElementById('depth_of_discharge').value = data.depth_of_discharge; document.getElementById('cycle_lifetime').value = data.cycle_lifetime; document.getElementById('temporal_degradation').value = data.temporal_degradation; document.getElementById('eol_threshold').value = data.eol_threshold; document.getElementById('om_power').value = data.om_power; document.getElementById('eol_cost_energy').value = data.eol_cost_energy; }}
+            function runComparativeAnalysis() { if (profileData.length === 0) { showModal("Veuillez charger un profil CSV."); return; } const currentInputs = getInputs(); const labels = [], lcosValues = [], paybackValues = []; for (const techKey in techData) { const tempInputs = { ...currentInputs, ...techData[techKey], discharge_duration: currentInputs.discharge_duration }; const simResults = runProfileSimulation(tempInputs, profileData); const financialResults = runFinancialCalculation(tempInputs, simResults); labels.push(techData[techKey].name); lcosValues.push(financialResults.lcos); paybackValues.push(isFinite(financialResults.simple_payback) ? financialResults.simple_payback : null); } document.getElementById('comparative_results_container').classList.remove('hidden'); if(charts.comparative) charts.comparative.destroy(); charts.comparative = new Chart(document.getElementById('comparative_chart').getContext('2d'), { type: 'bar', data: { labels, datasets: [ { label: 'LCOS ($/kWh)', data: lcosValues, backgroundColor: 'rgba(79, 70, 229, 0.7)' }, { label: 'Retour sur Investissement (années)', data: paybackValues, backgroundColor: 'rgba(52, 211, 153, 0.7)' } ]}, options: { responsive: true, plugins: { title: { display: true, text: 'Comparaison LCOS et Retour sur Investissement' } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Valeur' } } } } }); }
+            function runOptimization() { if (profileData.length === 0) { showModal("Veuillez charger un profil CSV."); return; } const minCap = parseFloat(document.getElementById('optim_min_cap').value); const maxCap = parseFloat(document.getElementById('optim_max_cap').value); const step = parseFloat(document.getElementById('optim_step').value); if (isNaN(minCap) || isNaN(maxCap) || isNaN(step) || minCap <= 0 || step <= 0 || minCap > maxCap) { showModal("Valeurs d'optimisation invalides."); return; } const currentInputs = getInputs(); const capacities = [], lcosValues = [], paybackValues = []; let bestLCOS = Infinity, bestCapacity = 0; for (let cap = minCap; cap <= maxCap; cap += step) { const tempInputs = { ...currentInputs, power_capacity: cap / currentInputs.discharge_duration }; const simResults = runProfileSimulation(tempInputs, profileData); const financialResults = runFinancialCalculation(tempInputs, simResults); capacities.push(cap); lcosValues.push(financialResults.lcos); paybackValues.push(isFinite(financialResults.simple_payback) ? financialResults.simple_payback : null); if (financialResults.lcos < bestLCOS && financialResults.lcos > 0) { bestLCOS = financialResults.lcos; bestCapacity = cap; } } document.getElementById('optimization_results_container').classList.remove('hidden'); document.getElementById('optimization_summary').textContent = `Optimum LCOS : ${formatNumber(bestCapacity, 1)} kWh avec ${formatCurrency(bestLCOS, ' $/kWh')}.`; if(charts.optimization) charts.optimization.destroy(); charts.optimization = new Chart(document.getElementById('optimization_chart').getContext('2d'), { type: 'line', data: { labels: capacities.map(c => `${c} kWh`), datasets: [ { label: 'LCOS ($/kWh)', data: lcosValues, borderColor: 'rgb(79, 70, 229)', yAxisID: 'y' }, { label: 'Retour sur Investissement (années)', data: paybackValues, borderColor: 'rgb(52, 211, 153)', yAxisID: 'y1' } ]}, options: { responsive: true, plugins: { title: { display: true, text: 'Optimisation de la Taille de la Batterie' } }, scales: { x: { title: { display: true, text: 'Capacité Énergétique (kWh)' } }, y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'LCOS ($/kWh)' } }, y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Retour sur Investissement (années)' }, grid: { drawOnChartArea: false } } } } }); }
+            function downloadReport() { if (!lastResults) { showModal("Veuillez lancer une simulation avant de télécharger."); return; } const { inputs, simResults, financialResults } = lastResults; const summary_ws_data = [ ["Rapport de Simulation"], [], ["Paramètres"], ["Technologie", techData[inputs.technology_selector].name], ["Puissance Crête PV (kWp)", inputs.pv_peak_power], ["Puissance Nominale Batterie (kW)", inputs.power_capacity], ["Durée de Décharge (heures)", inputs.discharge_duration], ["Capacité Énergétique (kWh)", financialResults.E_cap_kWh], [], ["Bilan Annuel"], ["Production PV (kWh)", simResults.totals.production], ["Consommation (kWh)", simResults.totals.consumption], ["Import Réseau (kWh)", simResults.totals.import], ["Export Réseau (kWh)", simResults.totals.export], ["Taux d'autoconsommation (%)", (simResults.totals.direct + simResults.totals.discharge) / simResults.totals.production * 100], ["Taux d'autosuffisance (%)", (simResults.totals.direct + simResults.totals.discharge) / simResults.totals.consumption * 100], [], ["Analyse Financière"], ["Investissement Initial ($)", financialResults.initial_investment], ["Durée de vie (années)", financialResults.N_op], ["Cycles Annuels", financialResults.annual_cycles], ["LCOS ($/kWh)", financialResults.lcos], ["Retour sur Investissement (années)", isFinite(financialResults.simple_payback) ? financialResults.simple_payback : "N/A"] ]; const hourly_ws_data = [ ["Profil Horaire Annuel (Wh)"], ["Heure", "Production", "Consommation", "SOC (%)", "Charge Batterie", "Décharge Batterie", "Import Réseau", "Export Réseau", "Bilan Financier ($)"] ]; const startDate = new Date('2025-01-01T00:00:00'); for (let i = 0; i < simResults.hourly.prod.length; i++) { const timestamp = new Date(startDate.getTime() + i * 60 * 60 * 1000); hourly_ws_data.push([ timestamp.toISOString(), simResults.hourly.prod[i], simResults.hourly.cons[i], simResults.hourly.soc[i], simResults.hourly.batteryCharge[i], simResults.hourly.batteryDischarge[i], simResults.hourly.gridImport[i], simResults.hourly.gridExport[i], simResults.hourly.hourlyNetCost[i] ]); } const wb = XLSX.utils.book_new(); const ws_summary = XLSX.utils.aoa_to_sheet(summary_ws_data); const ws_hourly = XLSX.utils.aoa_to_sheet(hourly_ws_data); XLSX.utils.book_append_sheet(wb, ws_summary, "Rapport Synthétique"); XLSX.utils.book_append_sheet(wb, ws_hourly, "Données Horaires Annuelles"); XLSX.writeFile(wb, "Rapport_Stockage_Energie.xlsx"); }
 
             // --- EVENT LISTENERS ---
             techSelector.addEventListener('change', (e) => populateTechInputs(e.target.value));
             calculateButton.addEventListener('click', calculateAndShowResults);
+            weekSelector.addEventListener('change', updateAndDisplayWeeklyChart);
             downloadButton.addEventListener('click', downloadReport);
             profileUploader.addEventListener('change', handleProfileFile);
             optimizeButton.addEventListener('click', runOptimization);
             compareButton.addEventListener('click', runComparativeAnalysis);
+            document.querySelectorAll('.tab-button').forEach(button => { button.addEventListener('click', () => { document.querySelectorAll('.tab-button, .tab-content').forEach(el => el.classList.remove('active')); button.classList.add('active'); document.getElementById(button.dataset.tab).classList.add('active'); }); });
 
-            // Tab functionality
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                    button.classList.add('active');
-                    document.getElementById(button.dataset.tab).classList.add('active');
-                });
-            });
-
-            // Initial population of inputs based on default technology
             populateTechInputs(techSelector.value);
+            weekSelector.disabled = true;
         });
     </script>
 </body>
